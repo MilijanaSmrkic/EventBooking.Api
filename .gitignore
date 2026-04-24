@@ -1,0 +1,108 @@
+## .NET / C# ##
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.ncb
+*.sdf
+*.opensdf
+*.dbmdl
+
+## Build output ##
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+## NuGet ##
+*.nupkg
+*.snupkg
+**/[Pp]ackages/
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+## Test results ##
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+TestResult.xml
+*.trx
+*.coverage
+*.coveragexml
+
+## Entity Framework migrations snapshot backup ##
+*.dbmdl
+*.jfm
+
+## Secrets / environment ##
+appsettings.*.json
+!appsettings.Development.json
+.env
+.env.*
+secrets.json
+**/UserSecrets/
+
+## IDE ##
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+*.DS_Store
+Thumbs.db
+
+## JetBrains Rider ##
+.idea/
+*.sln.iml
+
+## Visual Studio ##
+.vs/
+*.aps
+*.pch
+*.vspscc
+*.vssscc
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.vsix
+*.pidb
+
+## Publish ##
+publish/
+PublishProfiles/
+
+## Docker ##
+docker-compose.override.yml
+
+## Local SQL ##
+*.mdf
+*.ldf
+*.ndf
