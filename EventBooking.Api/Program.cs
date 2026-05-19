@@ -74,8 +74,6 @@ try
 
     var app = builder.Build();
 
-    await SeedAdminAsync(app);
-
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
@@ -93,6 +91,9 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
+
+    await SeedAdminAsync(app);
+
     app.Run();
 }
 catch (Exception ex) when (ex is not HostAbortedException)
@@ -104,29 +105,39 @@ catch (Exception ex) when (ex is not HostAbortedException)
 static async Task SeedAdminAsync(WebApplication app)
 {
     using var scope = app.Services.CreateScope();
-    var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
-    var tokenService = scope.ServiceProvider.GetRequiredService<ITokenService>();
     var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
         .CreateLogger("SeedAdmin");
 
-    var adminExists = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
-        .AnyAsync(context.Users, u => u.UserName == "admin");
+    try
+    {
+        var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+        var tokenService = scope.ServiceProvider.GetRequiredService<ITokenService>();
 
-    if (!adminExists)
-    {
-        context.Users.Add(new User
+        var adminExists = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
+            .AnyAsync(context.Users, u => u.UserName == "admin");
+
+        if (!adminExists)
         {
-            UserName = "admin",
-            Email = "admin@eventbooking.com",
-            PasswordHash = tokenService.HashPassword("Admin123!"),
-            Role = UserRoles.Admin
-        });
-        await context.SaveChangesAsync();
-        logger.LogInformation("Admin user seeded (admin@eventbooking.com)");
+            context.Users.Add(new User
+            {
+                UserName     = "admin",
+                Email        = "admin@eventbooking.com",
+                PasswordHash = tokenService.HashPassword("Admin123!"),
+                Role         = UserRoles.Admin
+            });
+            await context.SaveChangesAsync();
+            logger.LogInformation("Admin user seeded (admin@eventbooking.com)");
+        }
+        else
+        {
+            logger.LogDebug("Admin user already exists — skipping seed");
+        }
     }
-    else
+    catch (Exception ex)
     {
-        logger.LogDebug("Admin user already exists — skipping seed");
+        logger.LogWarning(ex,
+            "Database seed skipped — could not connect to the database. " +
+            "Run migrations and restart, or seed will run automatically on next startup.");
     }
 }
 

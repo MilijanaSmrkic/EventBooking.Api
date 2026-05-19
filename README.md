@@ -1,6 +1,6 @@
 # EventBooking API
 
-REST API za upravljanje događajima i rezervacijama, izgrađen na .NET 8 sa Clean Architecture i CQRS principima.
+REST API za upravljanje događajima i rezervacijama, izgrađen na **.NET 9** sa Clean Architecture i CQRS principima.
 
 ---
 
@@ -8,12 +8,13 @@ REST API za upravljanje događajima i rezervacijama, izgrađen na .NET 8 sa Clea
 
 | Sloj | Tehnologije |
 |---|---|
-| API | ASP.NET Core 8, Swagger/OpenAPI |
-| Application | MediatR 14 (CQRS), FluentValidation |
+| API | ASP.NET Core 9, Swagger/OpenAPI |
+| Application | MediatR 14 (CQRS), FluentValidation 12 |
 | Domain | DDD factory metode, private setteri |
-| Infrastructure | Entity Framework Core 8, SQL Server |
-| Auth | JWT Bearer, SHA-256 hashing |
-| Testovi | xUnit, Moq, MockQueryable |
+| Infrastructure | Entity Framework Core 9, SQL Server |
+| Auth | JWT Bearer, BCrypt |
+| Email | MailKit 4.9 |
+| Testovi | xUnit 2.9, Moq, MockQueryable, WebApplicationFactory |
 
 ---
 
@@ -29,6 +30,8 @@ EventBooking.Common          → deljeni API modeli
 tests/
   EventBooking.Domain.Tests        → unit testovi entiteta
   EventBooking.Application.Tests   → unit testovi handlera (Moq)
+  EventBooking.Integration.Tests   → testovi servisa
+  EventBooking.Api.Tests           → end-to-end HTTP testovi (WebApplicationFactory)
 ```
 
 ### CQRS + Repository pattern
@@ -42,7 +45,7 @@ tests/
 
 ### Preduslovi
 
-- .NET 8 SDK
+- .NET 9 SDK
 - SQL Server ili LocalDB
 
 ### 1. Kloniranje i restore
@@ -169,11 +172,11 @@ Kada se rezervacija otkaže (`PENDING` ili `CONFIRMED`):
 ### Statusovi rezervacije
 
 ```
-PENDING → CONFIRMED (odobravanje)
-PENDING → CANCELLED (otkazivanje)
-CONFIRMED → CANCELLED (otkazivanje)
-WAITLIST → CONFIRMED (automatska promocija)
-WAITLIST → CANCELLED (otkazivanje)
+PENDING   → CONFIRMED  (odobravanje)
+PENDING   → CANCELLED  (otkazivanje)
+CONFIRMED → CANCELLED  (otkazivanje)
+WAITLIST  → CONFIRMED  (automatska promocija)
+WAITLIST  → CANCELLED  (otkazivanje)
 ```
 
 ### Email notifikacije
@@ -189,8 +192,6 @@ Email se šalje pri odobravanju rezervacije. Template se konfiguriše u `appsett
 }
 ```
 
-Trenutna implementacija loguje email (`EmailQueueService`) — zameniti sa stvarnim queue/SMTP servisom.
-
 ---
 
 ## Testovi
@@ -202,7 +203,10 @@ dotnet test
 | Projekat | Testovi | Tip |
 |---|---|---|
 | `EventBooking.Domain.Tests` | 10 | Unit — čiste metode entiteta |
-| `EventBooking.Application.Tests` | 16 | Unit — handleri sa Moq repozitorijumima |
+| `EventBooking.Application.Tests` | 18 | Unit — handleri sa Moq repozitorijumima |
+| `EventBooking.Integration.Tests` | 6 | Testovi servisa i validatora |
+| `EventBooking.Api.Tests` | 12 | End-to-end HTTP testovi (WebApplicationFactory) |
+| **Ukupno** | **46** | |
 
 **Pokriveno:**
 - `Event` — Create, Update, Deactivate
@@ -211,16 +215,17 @@ dotnet test
 - `CreateReservationCommandHandler` — PENDING vs WAITLIST logika
 - `CancelReservationCommandHandler` — otkazivanje, WAITLIST ne okida event
 - `ApproveReservationCommandHandler` — odobravanje, validacija email-a i statusa
+- HTTP endpointi — auth, eventi, rezervacije (401/403/404/200)
 
 ---
 
 ## Struktura baze
 
 ```
-Locations (Id, City, PostalCode)
-Categories (Id, Name)
-Users (Id, UserName, Email, PasswordHash, Role)
-Events (Id, Title, Description, LocationId→, CategoryId→, EventDate, BasePrice, Capacity, CreatedAt, IsActive)
+Locations         (Id, City, PostalCode)
+Categories        (Id, Name)
+Users             (Id, UserName, Email, PasswordHash, Role)
+Events            (Id, Title, Description, LocationId→, CategoryId→, EventDate, BasePrice, Capacity, CreatedAt, IsActive)
 ReservationStatuses (Id, Code, Name)
-Reservations (Id, EventId→, UserId→, StatusCode→, SeatNumbers[JSON], SeatCount, ReservationDate)
+Reservations      (Id, EventId→, UserId→, StatusCode→, SeatNumbers[JSON], SeatCount, ReservationDate)
 ```

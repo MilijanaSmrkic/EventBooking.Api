@@ -2,7 +2,9 @@ using EventBooking.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace EventBooking.Api.Tests.Factories;
 
@@ -14,15 +16,13 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
-            var descriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
-            if (descriptor != null)
-                services.Remove(descriptor);
+            // EF Core 9 requires removing both DbContextOptions AND the
+            // IDbContextOptionsConfiguration (which holds the SqlServer config).
+            // Removing only DbContextOptions is not enough — two providers conflict.
+            services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
+            services.RemoveAll<IDbContextOptionsConfiguration<ApplicationDbContext>>();
 
             // Pre-evaluate the name so every scope in this factory shares the same InMemory store.
-            // DbContextOptions<T> has Scoped lifetime — evaluating inside the lambda would
-            // produce a new DB name per request, causing SeedAdminAsync and subsequent
-            // requests to see different (empty) databases.
             var dbName = "ApiTest_" + Guid.NewGuid();
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseInMemoryDatabase(dbName));
