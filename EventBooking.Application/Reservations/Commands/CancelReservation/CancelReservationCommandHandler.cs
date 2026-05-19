@@ -3,6 +3,7 @@ using EventBooking.Application.Abstractions.Repositories;
 using EventBooking.Application.Reservations.Events;
 using EventBooking.Domain.Entities;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace EventBooking.Application.Reservations.Commands.CancelReservation
 {
@@ -12,17 +13,20 @@ namespace EventBooking.Application.Reservations.Commands.CancelReservation
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPublisher _publisher;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ILogger<CancelReservationCommandHandler> _logger;
 
         public CancelReservationCommandHandler(
             IReservationRepository reservationRepository,
             IUnitOfWork unitOfWork,
             IPublisher publisher,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            ILogger<CancelReservationCommandHandler> logger)
         {
             _reservationRepository = reservationRepository;
             _unitOfWork = unitOfWork;
             _publisher = publisher;
             _currentUserService = currentUserService;
+            _logger = logger;
         }
 
         public async Task<Unit> Handle(CancelReservationCommand request, CancellationToken cancellationToken)
@@ -45,6 +49,11 @@ namespace EventBooking.Application.Reservations.Commands.CancelReservation
 
             reservation.Cancel(_currentUserService.UserId);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Reservation {ReservationId} cancelled by user {CancelledByUserId} (was {PreviousStatus}, freed {FreedSeats} seats, event {EventId})",
+                reservation.Id, _currentUserService.UserId, wasOccupyingCapacity ? "occupying" : "waitlist",
+                freedSeats, eventId);
 
             if (wasOccupyingCapacity)
                 await _publisher.Publish(

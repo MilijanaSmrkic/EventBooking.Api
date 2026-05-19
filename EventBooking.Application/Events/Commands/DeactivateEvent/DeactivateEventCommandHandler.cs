@@ -1,6 +1,7 @@
 using EventBooking.Application.Abstractions;
 using EventBooking.Application.Abstractions.Repositories;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace EventBooking.Application.Events.Commands.DeactivateEvent
 {
@@ -8,11 +9,16 @@ namespace EventBooking.Application.Events.Commands.DeactivateEvent
     {
         private readonly IEventRepository _eventRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ILogger<DeactivateEventCommandHandler> _logger;
 
-        public DeactivateEventCommandHandler(IEventRepository eventRepository, IUnitOfWork unitOfWork)
+        public DeactivateEventCommandHandler(
+            IEventRepository eventRepository,
+            IUnitOfWork unitOfWork,
+            ILogger<DeactivateEventCommandHandler> logger)
         {
             _eventRepository = eventRepository;
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Unit> Handle(DeactivateEventCommand request, CancellationToken cancellationToken)
@@ -23,6 +29,10 @@ namespace EventBooking.Application.Events.Commands.DeactivateEvent
             @event.Deactivate();
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Event {EventId} '{Title}' deactivated",
+                @event.Id, @event.Title);
 
             return Unit.Value;
         }

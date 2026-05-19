@@ -4,6 +4,7 @@ using EventBooking.Application.Reservations.Commands.ApproveReservation;
 using EventBooking.Application.Reservations.Events;
 using EventBooking.Domain.Entities;
 using MediatR;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System.Reflection;
 
@@ -18,7 +19,11 @@ public class ApproveReservationCommandHandlerTests
 
     public ApproveReservationCommandHandlerTests()
     {
-        _handler = new ApproveReservationCommandHandler(_reservationRepo.Object, _uow.Object, _publisher.Object);
+        _handler = new ApproveReservationCommandHandler(
+            _reservationRepo.Object,
+            _uow.Object,
+            _publisher.Object,
+            NullLogger<ApproveReservationCommandHandler>.Instance);
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         _publisher
             .Setup(p => p.Publish(It.IsAny<INotification>(), It.IsAny<CancellationToken>()))

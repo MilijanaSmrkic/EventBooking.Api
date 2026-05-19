@@ -3,6 +3,7 @@ using EventBooking.Application.Abstractions.Repositories;
 using EventBooking.Application.Reservations.Commands.CreateReservation;
 using EventBooking.Application.Tests.Helpers;
 using EventBooking.Domain.Entities;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace EventBooking.Application.Tests.Reservations.Commands;
@@ -21,7 +22,8 @@ public class CreateReservationCommandHandlerTests
             _eventRepo.Object,
             _reservationRepo.Object,
             _ctx.Object,
-            _uow.Object);
+            _uow.Object,
+            NullLogger<CreateReservationCommandHandler>.Instance);
 
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
     }

@@ -22,22 +22,30 @@ namespace EventBooking.Api.Middleware
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unhandled exception: {Message}", ex.Message);
                 await HandleAsync(context, ex);
             }
         }
 
-        private static async Task HandleAsync(HttpContext context, Exception exception)
+        private async Task HandleAsync(HttpContext context, Exception exception)
         {
             var (status, message) = exception switch
             {
-                KeyNotFoundException      => (StatusCodes.Status404NotFound,                  exception.Message),
-                InvalidOperationException => (StatusCodes.Status422UnprocessableEntity,        exception.Message),
-                UnauthorizedAccessException => (StatusCodes.Status401Unauthorized,             exception.Message),
-                ValidationException ve    => (StatusCodes.Status400BadRequest,
-                                              string.Join(" | ", ve.Errors.Select(e => e.ErrorMessage))),
-                _                         => (StatusCodes.Status500InternalServerError,        "An unexpected error occurred.")
+                KeyNotFoundException        => (StatusCodes.Status404NotFound,               exception.Message),
+                InvalidOperationException   => (StatusCodes.Status422UnprocessableEntity,    exception.Message),
+                UnauthorizedAccessException => (StatusCodes.Status401Unauthorized,           exception.Message),
+                ValidationException ve      => (StatusCodes.Status400BadRequest,
+                                                string.Join(" | ", ve.Errors.Select(e => e.ErrorMessage))),
+                _                           => (StatusCodes.Status500InternalServerError,    "An unexpected error occurred.")
             };
+
+            if (status >= 500)
+                _logger.LogError(exception,
+                    "Unhandled server error on {Method} {Path}: {Message}",
+                    context.Request.Method, context.Request.Path, exception.Message);
+            else
+                _logger.LogWarning(
+                    "Client error {StatusCode} on {Method} {Path}: {Message}",
+                    status, context.Request.Method, context.Request.Path, exception.Message);
 
             context.Response.StatusCode = status;
             context.Response.ContentType = "application/json";

@@ -2,6 +2,7 @@ using EventBooking.Application.Abstractions;
 using EventBooking.Application.Models;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace EventBooking.Application.Auth
@@ -11,27 +12,38 @@ namespace EventBooking.Application.Auth
         private readonly IApplicationDbContext _context;
         private readonly ITokenService _tokenService;
         private readonly JwtSettings _jwtSettings;
+        private readonly ILogger<LoginCommandHandler> _logger;
 
         public LoginCommandHandler(
             IApplicationDbContext context,
             ITokenService tokenService,
-            IOptions<JwtSettings> jwtSettings)
+            IOptions<JwtSettings> jwtSettings,
+            ILogger<LoginCommandHandler> logger)
         {
             _context = context;
             _tokenService = tokenService;
             _jwtSettings = jwtSettings.Value;
+            _logger = logger;
         }
 
         public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
             var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.UserName == request.UserName, cancellationToken)
-                ?? throw new UnauthorizedAccessException("Invalid username or password.");
+                .FirstOrDefaultAsync(u => u.UserName == request.UserName, cancellationToken);
 
-            if (!_tokenService.VerifyPassword(request.Password, user.PasswordHash!))
+            if (user is null || !_tokenService.VerifyPassword(request.Password, user.PasswordHash!))
+            {
+                _logger.LogWarning(
+                    "Failed login attempt for username '{UserName}'",
+                    request.UserName);
                 throw new UnauthorizedAccessException("Invalid username or password.");
+            }
 
             var token = _tokenService.GenerateToken(user);
+
+            _logger.LogInformation(
+                "User '{UserName}' (Id={UserId}, Role={Role}) logged in successfully",
+                user.UserName, user.Id, user.Role);
 
             return new LoginResponse
             {

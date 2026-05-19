@@ -7,6 +7,7 @@ using EventBooking.Infrastructure.Persistence;
 using EventBooking.Infrastructure.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace EventBooking.Integration.Tests.Reservations;
@@ -57,10 +58,12 @@ public class ReservationFlowTests : IDisposable
     }
 
     private CreateReservationCommandHandler CreateHandler() =>
-        new(_eventRepo, _reservationRepo, _context, _context);
+        new(_eventRepo, _reservationRepo, _context, _context,
+            NullLogger<CreateReservationCommandHandler>.Instance);
 
     private CancelReservationCommandHandler CancelHandler() =>
-        new(_reservationRepo, _context, _publisher.Object, _currentUser.Object);
+        new(_reservationRepo, _context, _publisher.Object, _currentUser.Object,
+            NullLogger<CancelReservationCommandHandler>.Instance);
 
     [Fact]
     public async Task CreateReservation_ShouldBePending_WhenCapacityAvailable()
@@ -178,7 +181,8 @@ public class ReservationFlowTests : IDisposable
             .FirstAsync(r => r.Id == waitlistId);
 
         var promotionHandler = new ReservationCancelledEventHandler(
-            _reservationRepo, _context, _publisher.Object);
+            _reservationRepo, _context, _publisher.Object,
+            NullLogger<ReservationCancelledEventHandler>.Instance);
 
         await promotionHandler.Handle(
             new ReservationCancelledEvent(pendingId, @event.Id, 2),

@@ -95,6 +95,9 @@ Thumbs.db
 *.vsix
 *.pidb
 
+## Serilog file sink output ##
+logs/
+
 ## Publish ##
 publish/
 PublishProfiles/

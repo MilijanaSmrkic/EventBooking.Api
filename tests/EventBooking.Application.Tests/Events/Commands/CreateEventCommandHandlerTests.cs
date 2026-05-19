@@ -2,6 +2,7 @@ using EventBooking.Application.Abstractions;
 using EventBooking.Application.Abstractions.Repositories;
 using EventBooking.Application.Events.Commands.Create;
 using EventBooking.Domain.Entities;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace EventBooking.Application.Tests.Events.Commands;
@@ -14,7 +15,10 @@ public class CreateEventCommandHandlerTests
 
     public CreateEventCommandHandlerTests()
     {
-        _handler = new CreateEventCommandHandler(_eventRepo.Object, _uow.Object);
+        _handler = new CreateEventCommandHandler(
+            _eventRepo.Object,
+            _uow.Object,
+            NullLogger<CreateEventCommandHandler>.Instance);
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
     }
 

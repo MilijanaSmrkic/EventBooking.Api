@@ -3,6 +3,7 @@ using EventBooking.Application.Abstractions.Repositories;
 using EventBooking.Application.Reservations.Events;
 using EventBooking.Domain.Entities;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace EventBooking.Application.Reservations.Commands.ApproveReservation
 {
@@ -11,15 +12,18 @@ namespace EventBooking.Application.Reservations.Commands.ApproveReservation
         private readonly IReservationRepository _reservationRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPublisher _publisher;
+        private readonly ILogger<ApproveReservationCommandHandler> _logger;
 
         public ApproveReservationCommandHandler(
             IReservationRepository reservationRepository,
             IUnitOfWork unitOfWork,
-            IPublisher publisher)
+            IPublisher publisher,
+            ILogger<ApproveReservationCommandHandler> logger)
         {
             _reservationRepository = reservationRepository;
             _unitOfWork = unitOfWork;
             _publisher = publisher;
+            _logger = logger;
         }
 
         public async Task<Unit> Handle(ApproveReservationCommand request, CancellationToken cancellationToken)
@@ -37,6 +41,11 @@ namespace EventBooking.Application.Reservations.Commands.ApproveReservation
 
             reservation.Approve();
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Reservation {ReservationId} approved — user {UserId} ({Email}), event '{EventTitle}', seats {SeatCount}",
+                reservation.Id, reservation.UserId, reservation.User.Email,
+                reservation.Event?.Title, reservation.SeatNumbers.Count);
 
             await _publisher.Publish(new ReservationApprovedEvent(
                 reservation.Id,

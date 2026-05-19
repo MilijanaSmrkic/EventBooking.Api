@@ -4,6 +4,7 @@ using EventBooking.Application.Reservations.Commands.CancelReservation;
 using EventBooking.Application.Reservations.Events;
 using EventBooking.Domain.Entities;
 using MediatR;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace EventBooking.Application.Tests.Reservations.Commands;
@@ -22,7 +23,11 @@ public class CancelReservationCommandHandlerTests
         _currentUser.Setup(s => s.IsAdmin).Returns(false);
 
         _handler = new CancelReservationCommandHandler(
-            _reservationRepo.Object, _uow.Object, _publisher.Object, _currentUser.Object);
+            _reservationRepo.Object,
+            _uow.Object,
+            _publisher.Object,
+            _currentUser.Object,
+            NullLogger<CancelReservationCommandHandler>.Instance);
 
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         _publisher
